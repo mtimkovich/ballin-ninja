@@ -6,6 +6,7 @@ import hashlib
 import logging
 
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
@@ -52,14 +53,29 @@ class Index(Controller):
             error = 'paste cannot be blank'
             self.render('paste.html', error = error)
 
-class PastePage(Controller):
-    def get(self, name):
-        rows = Paste.all().filter('name =', name)
-        logging.info('DB QUERY')
 
-        if rows.count():
+class PastePage(Controller):
+    def get_paste(self, name):
+        paste = memcache.get(name)
+
+        if not paste:
+            logging.info('DB QUERY')
+            rows = Paste.all().filter('name =', name)
+
+            if rows.count():
+                paste = rows[0].content
+                memcache.set(name, paste)
+            else:
+                return None
+
+        return paste
+
+    def get(self, name):
+        content = self.get_paste(name)
+
+        if content:
             self.response.headers['Content-Type'] = 'text/plain'
-            self.write(rows[0].content)
+            self.write(content)
         else:
             self.error(404)
 
