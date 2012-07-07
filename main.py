@@ -48,6 +48,8 @@ class Index(Controller):
             p.name = name
             p.put()
 
+            memcache.set(name, content)
+
             self.redirect('/paste/' + name)
         else:
             error = 'paste cannot be blank'
