@@ -12,6 +12,9 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
 
+def blank(string):
+    return (not string or string.isspace())
+
 class Controller(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
@@ -35,7 +38,7 @@ class Index(Controller):
     def post(self):
         content = self.request.get('content')
 
-        if content and not content.isspace():
+        if not blank(content):
             p = Paste(content = content)
             p.put()
 
