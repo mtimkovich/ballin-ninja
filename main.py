@@ -1,0 +1,70 @@
+import webapp2
+import jinja2
+
+import os
+import hashlib
+import logging
+
+from google.appengine.ext import db
+
+template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
+                               autoescape = True)
+
+def render_str(template, **params):
+    t = jinja_env.get_template(template)
+    return t.render(params)
+
+class Controller(webapp2.RequestHandler):
+    def write(self, *a, **kw):
+        self.response.out.write(*a, **kw)
+
+    def render_str(self, template, **params):
+        return render_str(template, **params)
+
+    def render(self, template, **kw):
+        self.write(self.render_str(template, **kw))
+
+class Paste(db.Model):
+    name = db.StringProperty()
+    content = db.TextProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
+
+class Index(Controller):
+    def get(self):
+        self.render('paste.html')
+
+    def post(self):
+        content = self.request.get('content')
+
+        if content and not content.isspace():
+            p = Paste(content = content)
+            p.put()
+
+            id = str(p.key().id())
+            name = hashlib.md5(id).hexdigest()[0:6]
+
+            p.name = name
+            p.put()
+
+            self.redirect('/paste/' + name)
+        else:
+            error = 'paste cannot be blank'
+            self.render('paste.html', error = error)
+
+class PastePage(Controller):
+    def get(self, name):
+        rows = Paste.all().filter('name =', name)
+        logging.info('DB QUERY')
+
+        if rows.count():
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.write(rows[0].content)
+        else:
+            self.error(404)
+
+app = webapp2.WSGIApplication([
+    ('/', Index),
+    ('/paste/(\w+)', PastePage),
+],
+    debug=True)
