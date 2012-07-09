@@ -52,7 +52,7 @@ class PastePage(Controller):
         paste = memcache.get(name)
 
         if not paste:
-            logging.info('DB QUERY')
+            logging.info('SELECT * FROM Paste WHERE name = ' + name)
             rows = Paste.all().filter('name =', name)
 
             if rows.count():
