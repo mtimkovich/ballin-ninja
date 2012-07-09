@@ -53,7 +53,7 @@ class PastePage(Controller):
 
         if not paste:
             logging.info('SELECT * FROM Paste WHERE name = ' + name)
-            rows = Paste.all().filter('name =', name)
+            rows = models.Paste.all().filter('name =', name)
 
             if rows.count():
                 paste = rows[0].content
