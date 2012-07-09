@@ -5,31 +5,22 @@ import os
 import hashlib
 import logging
 
-from google.appengine.ext import db
+from functions import *
+import models
+
 from google.appengine.api import memcache
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
 
-def blank(string):
-    return (not string or string.isspace())
-
 class Controller(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
 
-    def render_str(self, template, **params):
+    def render(self, template, **params):
         t = jinja_env.get_template(template)
-        return t.render(params)
-
-    def render(self, template, **kw):
-        self.write(self.render_str(template, **kw))
-
-class Paste(db.Model):
-    name = db.StringProperty()
-    content = db.TextProperty(required = True)
-    created = db.DateTimeProperty(auto_now_add = True)
+        self.write(t.render(params))
 
 class Index(Controller):
     def get(self):
@@ -39,7 +30,7 @@ class Index(Controller):
         content = self.request.get('content')
 
         if not blank(content):
-            p = Paste(content = content)
+            p = models.Paste(content = content)
             p.put()
 
             id = str(p.key().id())
