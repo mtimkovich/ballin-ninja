@@ -46,7 +46,6 @@ class Index(Controller):
             error = 'paste cannot be blank'
             self.render('paste.html', error = error)
 
-
 class PastePage(Controller):
     def get_paste(self, name):
         paste = memcache.get(name)
